@@ -1,0 +1,47 @@
+:root{
+  --bg:#f5f7fb; --card:#ffffff; --accent:#2563eb; --muted:#475569; --glass:rgba(15,23,42,0.03);
+  --nav-bg: #0b1220; --nav-color: #ffffff; --card-shadow: rgba(11,17,32,0.06); --border: rgba(11,17,32,0.1);
+}
+*{box-sizing:border-box}
+html,body,#app{height:100%;}
+.body{margin:0}
+.body{margin:0}
+body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;background:linear-gradient(180deg,var(--bg),#eef3fb);color:#0b1220}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--nav-bg);color:var(--nav-color);box-shadow:0 6px 18px rgba(2,6,23,0.12)}
+.topbar h1{margin:0;font-size:18px;letter-spacing:0.2px;color:var(--nav-color)}
+.actions{display:flex;gap:8px}
+.tab{background:transparent;border:1px solid transparent;padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer;transition:all .12s}
+.tab.active{color:#fff;background:var(--accent);box-shadow:0 6px 18px rgba(37,99,235,0.12);transform:translateY(-2px)}
+.main{display:flex;height:calc(100% - 72px);gap:18px;padding:18px}
+.sidebar{width:340px;padding:18px;background:var(--card);border-radius:12px;box-shadow:0 8px 24px var(--card-shadow);border:1px solid rgba(11,17,32,0.04)}
+.list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.btn-primary{background:var(--accent);border:none;color:white;padding:8px 12px;border-radius:8px;cursor:pointer;box-shadow:0 6px 20px rgba(124,58,237,0.18);}
+.items{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;overflow:auto;height:calc(100% - 100px)}
+.item{padding:12px;border-radius:10px;background:var(--bg);display:flex;gap:12px;align-items:center;cursor:pointer;transition:transform .12s,box-shadow .12s;border:1px solid rgba(11,17,32,0.03)}
+.item:hover{transform:translateX(6px);box-shadow:0 8px 20px rgba(11,17,32,0.06)}
+.item .icon{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,rgba(0,0,0,0.03),rgba(0,0,0,0.01));display:flex;align-items:center;justify-content:center;font-weight:600}
+.item .meta{flex:1}
+.item .meta h4{margin:0;font-size:14px}
+.item .meta p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.detail{flex:1;padding:22px;background:var(--card);border-radius:12px;box-shadow:0 8px 24px var(--card-shadow);border:1px solid rgba(11,17,32,0.04);display:flex;flex-direction:column;overflow:hidden}
+.empty{opacity:.8;border:2px dashed rgba(11,17,32,0.04);padding:40px;border-radius:12px;text-align:center;background:linear-gradient(180deg,transparent,rgba(2,6,23,0.01))}
+
+/* Modal */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(11,17,32,0.22);backdrop-filter: blur(4px);animation:fadeIn .18s}
+.modal.hidden{display:none}
+.modal-card{width:420px;background:var(--card);padding:18px;border-radius:12px;box-shadow:0 12px 40px rgba(11,17,32,0.08);transform:translateY(-10px);animation:pop .18s}
+.modal-close{position:absolute;right:18px;top:12px;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+/* Logout ghost button */
+.btn-ghost{background:#dc2626;border:1px solid rgba(0,0,0,0.08);color:#fff;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+
+.field{margin:8px 0}
+.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+.field input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+.field textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;resize:vertical;min-height:96px;font-family:inherit}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+
+@keyframes pop{from{opacity:0;transform:translateY(-20px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* Responsive */
+@media (max-width:800px){.sidebar{width:100%;height:260px;border-right:none;border-bottom:1px solid rgba(255,255,255,0.03)}.main{flex-direction:column}.detail{height:calc(100% - 260px);overflow:auto}}

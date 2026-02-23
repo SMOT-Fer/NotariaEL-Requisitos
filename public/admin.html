@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="/admin.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="topbar">
+      <h1>Totem Admin</h1>
+      <div class="actions">
+        <button id="btn-logout" class="btn-ghost">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <aside class="sidebar">
+        <div class="selection">
+          <button id="tab-tramites" class="tab active">Trámites</button>
+          <button id="tab-modulos" class="tab">Módulos</button>
+        </div>
+        <div class="list-header">
+          <h2 id="list-title">Trámites</h2>
+          <button id="btn-new" class="btn-primary">Nuevo</button>
+        </div>
+        <ul id="items" class="items" aria-live="polite"></ul>
+      </aside>
+
+      <section class="detail" id="detail">
+        <div class="empty">Selecciona un elemento para ver detalles</div>
+        <!-- Layout: info arriba, requisitos en el medio, módulos a la derecha -->
+        <div style="display:flex;gap:20px;height:100%">
+          <div style="flex:1;display:flex;flex-direction:column">
+            <div id="tramite-info"></div>
+            <div id="tramite-requisitos" style="flex:1;overflow:auto"></div>
+          </div>
+          <div id="tramite-modulos" style="flex:0 0 420px;overflow:auto;border-left:1px solid var(--border);padding-left:20px"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button id="modal-close" class="modal-close">×</button>
+        <h3 id="modal-title">Nuevo</h3>
+        <form id="modal-form">
+          <div class="field">
+            <label>Nombre</label>
+            <input name="titulo" required />
+          </div>
+          <input type="hidden" name="iconoCurrent" />
+          <div class="field" id="field-modulo" style="display:none">
+            <label>Módulo</label>
+            <input name="modulo" type="number" min="0" max="99" maxlength="2" pattern="\\d{1,2}" />
+          </div>
+          <div class="field" id="field-piso" style="display:none">
+            <label>Piso</label>
+            <input name="piso" type="number" min="0" max="99" maxlength="2" pattern="\\d{1,2}" />
+          </div>
+          <div class="field" id="field-icono-file">
+            <label>Icono (subir archivo)</label>
+            <input name="iconoFile" type="file" accept="image/*" />
+          </div>
+          <div class="field" id="field-icon-preview" style="display:none">
+            <label>Preview</label>
+            <img id="icon-preview" style="max-width:160px;display:block;border-radius:6px;margin-top:8px" />
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="btn-primary">Guardar</button>
+            <button type="button" id="modal-cancel">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <!-- Requisito Modal -->
+    <div id="modal-req" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <button id="modal-req-close" class="modal-close">×</button>
+        <h3 id="modal-req-title">Requisito</h3>
+        <form id="modal-req-form">
+          <input type="hidden" name="reqId" />
+          <input type="hidden" name="reqTramiteId" />
+          <div class="field">
+            <label>Texto</label>
+            <textarea name="texto" rows="4" required></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="submit" class="btn-primary">Guardar</button>
+            <button type="button" id="modal-req-cancel">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Totem - Notaría</title>
+    <link rel="stylesheet" href="/index.css">
+  </head>
+  <body>
+    <div id="startOverlay" class="start-overlay" role="dialog" aria-modal="true" aria-label="Inicio del módulo informativo">
+      <div class="start-panel">
+        <p class="start-text">Para iniciar el módulo informativo:</p>
+        <button id="startModuleBtn" class="start-btn">INICIAR</button>
+      </div>
+    </div>
+    <div class="app">
+      <nav class="navbar">
+        <div class="nav-inner">
+          <h1 class="nav-title">MÓDULO DE REQUISITOS</h1>
+        </div>
+      </nav>
+
+      <div id="cardsRangeInfo" class="cards-range-info" aria-live="polite">0-0 / 0</div>
+
+      <main class="container">
+        <section id="cards" class="cards"></section>
+      </main>
+
+      <button id="pagePrevBtn" class="scroll-btn page-nav-btn page-nav-prev hidden" aria-label="Ver trámites anteriores">◀</button>
+      <button id="pageNextBtn" class="scroll-btn page-nav-btn page-nav-next hidden" aria-label="Ver siguientes trámites">▶</button>
+
+      <!-- Modal de requisitos -->
+      <div id="modalBackdrop" class="modal-backdrop hidden"></div>
+      <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+        <span id="modalCountdown" class="modal-countdown hidden" aria-live="polite"></span>
+        <h3 id="modalTitle">Requisitos</h3>
+        <div id="modalBody" class="modal-body">Seleccione un trámite para ver los requisitos.</div>
+        <button id="scrollUpBtn" class="scroll-btn scroll-up hidden" aria-label="Subir contenido">▲</button>
+        <button id="scrollDownBtn" class="scroll-btn scroll-down hidden" aria-label="Bajar contenido">▼</button>
+        <button id="modalFinish" class="modal-finish">Finalizar</button>
+      </div>
+      <!-- Loader overlay (shows spinner while fetching data) -->
+      <div id="loaderOverlay" class="loader-overlay hidden"><div class="spinner" aria-hidden="true"></div></div>
+      <section id="guideAssistant" class="guide-assistant" aria-live="polite">
+        <div class="guide-avatar" aria-hidden="true">👩‍💼</div>
+        <p id="guideAssistantText" class="guide-bubble"></p>
+      </section>
+    </div>
+
+    <script src="/index.js"></script>
+  </body>
+</html>
