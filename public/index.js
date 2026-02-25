@@ -25,15 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalCountdown = document.getElementById('modalCountdown');
   const scrollUpBtn = document.getElementById('scrollUpBtn');
   const scrollDownBtn = document.getElementById('scrollDownBtn');
-  const pagePrevBtn = document.getElementById('pagePrevBtn');
-  const pageNextBtn = document.getElementById('pageNextBtn');
-  const cardsRangeInfo = document.getElementById('cardsRangeInfo');
   const guideAssistant = document.getElementById('guideAssistant');
   const guideAssistantText = document.getElementById('guideAssistantText');
   const MODAL_TIMEOUT_MS = 300_000;
   const GUIDE_INTERVAL_MS = 300_000;
-  const CARDS_PER_PAGE = 8;
-  const PAGE_TRANSITION_MS = 240;
   const GUIDE_MESSAGE = 'Aqui puedes ver todos los tramites de la notaría Espinoza Lara. Acercate y solicita los requisitos que necesites';
   const GUIDE_CLICK_MESSAGE = 'Escoge el tramite que vas a realizar para obtener los requisitos';
   let modalTimeoutId = null;
@@ -43,23 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let guideBubbleTimeoutId = null;
   let moduleStarted = false;
   let allTramites = [];
-  let currentPage = 0;
-  let isPageTransitioning = false;
   const tramiteDetailCache = new Map();
   const DETAIL_CACHE_TTL_MS = 120_000;
-
-  function updateCardsRangeInfo() {
-    if (!cardsRangeInfo) return;
-    const total = allTramites.length;
-    if (total === 0) {
-      cardsRangeInfo.textContent = '0-0 / 0';
-      return;
-    }
-
-    const startIndex = currentPage * CARDS_PER_PAGE + 1;
-    const endIndex = Math.min(startIndex + CARDS_PER_PAGE - 1, total);
-    cardsRangeInfo.textContent = `${startIndex}-${endIndex} / ${total}`;
-  }
 
   function showGuideBubble(message) {
     if (!guideAssistantText) return;
@@ -117,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hideGuideBubble();
     if (guideAssistant) guideAssistant.classList.add('show');
     startGuideLoop();
-    renderCards().then(() => requestAnimationFrame(updatePageNavigationButtons));
+    renderCards();
   }
 
   function handleGuideAssistantClick() {
@@ -164,36 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
     modalTimeoutId = setTimeout(() => {
       closeModal();
     }, MODAL_TIMEOUT_MS);
-  }
-
-  function updatePageNavigationButtons() {
-    updateCardsRangeInfo();
-    if (!pagePrevBtn || !pageNextBtn) return;
-    if (!modal.classList.contains('hidden')) {
-      pagePrevBtn.classList.add('hidden');
-      pageNextBtn.classList.add('hidden');
-      return;
-    }
-
-    const totalPages = Math.ceil(allTramites.length / CARDS_PER_PAGE);
-    if (totalPages <= 1) {
-      pagePrevBtn.classList.add('hidden');
-      pageNextBtn.classList.add('hidden');
-      return;
-    }
-
-    pagePrevBtn.classList.toggle('hidden', currentPage <= 0);
-    pageNextBtn.classList.toggle('hidden', currentPage >= totalPages - 1);
-  }
-
-  function changePage(direction) {
-    if (isPageTransitioning) return;
-    const totalPages = Math.ceil(allTramites.length / CARDS_PER_PAGE);
-    if (totalPages <= 1) return;
-    const nextPage = Math.min(Math.max(currentPage + direction, 0), totalPages - 1);
-    if (nextPage === currentPage) return;
-    currentPage = nextPage;
-    renderCurrentPage(direction);
   }
 
   function updateScrollButtons() {
@@ -254,11 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return data;
   }
 
-  function prefetchCurrentPageDetails() {
+  function prefetchAllDetails() {
     if (!allTramites || allTramites.length === 0) return;
-    const startIndex = currentPage * CARDS_PER_PAGE;
-    const pageItems = allTramites.slice(startIndex, startIndex + CARDS_PER_PAGE);
-    pageItems.forEach((item) => {
+    allTramites.forEach((item) => {
       if (!item || item.id == null) return;
       fetchTramiteDetail(item.id, { silent: true }).catch(() => {});
     });
@@ -280,8 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const img = document.createElement('img');
       img.src = `/icons/${tramite.icono}`;
       img.alt = '';
-      img.style.width = '48px';
-      img.style.height = '48px';
+      img.style.width = '34px';
+      img.style.height = '34px';
       icon.appendChild(img);
     } else {
       icon.textContent = '🗂️';
@@ -302,57 +250,23 @@ document.addEventListener('DOMContentLoaded', () => {
     return card;
   }
 
-  function paintCurrentPage() {
+  function paintCards() {
     cardsContainer.innerHTML = '';
     if (!allTramites || allTramites.length === 0) {
       cardsContainer.textContent = 'No hay trámites disponibles.';
       return;
     }
 
-    const startIndex = currentPage * CARDS_PER_PAGE;
-    const pageItems = allTramites.slice(startIndex, startIndex + CARDS_PER_PAGE);
-
-    pageItems.forEach((t, index) => {
-      const card = createCard(t, startIndex + index + 1);
+    allTramites.forEach((t, index) => {
+      const card = createCard(t, index + 1);
       cardsContainer.appendChild(card);
     });
   }
 
-  function renderCurrentPage(direction = 0) {
-    if (!cardsContainer) return;
-
-    if (direction === 0 || cardsContainer.children.length === 0) {
-      paintCurrentPage();
-      updatePageNavigationButtons();
-      prefetchCurrentPageDetails();
-      return;
-    }
-
-    const exitClass = direction > 0 ? 'page-exit-left' : 'page-exit-right';
-    const enterClass = direction > 0 ? 'page-enter-right' : 'page-enter-left';
-
-    isPageTransitioning = true;
-    cardsContainer.classList.remove('page-exit-left', 'page-exit-right', 'page-enter-left', 'page-enter-right');
-    cardsContainer.classList.add(exitClass);
-
-    setTimeout(() => {
-      cardsContainer.classList.remove(exitClass);
-      paintCurrentPage();
-      updatePageNavigationButtons();
-      prefetchCurrentPageDetails();
-      cardsContainer.classList.add(enterClass);
-
-      setTimeout(() => {
-        cardsContainer.classList.remove(enterClass);
-        isPageTransitioning = false;
-      }, PAGE_TRANSITION_MS);
-    }, PAGE_TRANSITION_MS);
-  }
-
   async function renderCards() {
     allTramites = await fetchTramites();
-    currentPage = 0;
-    renderCurrentPage();
+    paintCards();
+    prefetchAllDetails();
   }
 
   async function openModalById(id) {
@@ -444,7 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (modalFinish) modalFinish.focus();
       requestAnimationFrame(updateScrollButtons);
-      requestAnimationFrame(updatePageNavigationButtons);
     } catch (err) {
       console.error(err);
       modalTitle.textContent = 'Error';
@@ -465,7 +378,6 @@ document.addEventListener('DOMContentLoaded', () => {
       modal.classList.remove('hide');
       modalBackdrop.classList.add('hidden');
       updateScrollButtons();
-      updatePageNavigationButtons();
     }, 320);
   }
 
@@ -477,11 +389,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modalFinish) modalFinish.addEventListener('click', finishModal);
   if (scrollUpBtn) scrollUpBtn.addEventListener('click', () => scrollModalContent(-1));
   if (scrollDownBtn) scrollDownBtn.addEventListener('click', () => scrollModalContent(1));
-  if (pagePrevBtn) pagePrevBtn.addEventListener('click', () => changePage(-1));
-  if (pageNextBtn) pageNextBtn.addEventListener('click', () => changePage(1));
   modalBody.addEventListener('scroll', updateScrollButtons);
   window.addEventListener('resize', updateScrollButtons);
-  window.addEventListener('resize', updatePageNavigationButtons);
   if (guideAssistant) {
     guideAssistant.addEventListener('click', handleGuideAssistantClick);
   }
