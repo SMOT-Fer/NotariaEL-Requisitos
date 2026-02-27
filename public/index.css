@@ -189,8 +189,8 @@ body::-webkit-scrollbar{width:0;height:0}
   transform:translateY(14px);
   opacity:0;
   transition:transform .28s ease,opacity .28s ease;
-  pointer-events:auto;
-  cursor:pointer;
+  pointer-events:none;
+  cursor:default;
 }
 
 .guide-assistant.show{transform:translateY(0);opacity:1}
@@ -206,6 +206,8 @@ body::-webkit-scrollbar{width:0;height:0}
   background:linear-gradient(180deg,#ffffff,#eef4ff);
   border:1px solid #dbe5f3;
   box-shadow:0 8px 20px rgba(15,23,42,0.15);
+  pointer-events:auto;   /* ✅ Solo el círculo es clickeable */
+  cursor:pointer;
 }
 
 .guide-bubble{
@@ -222,6 +224,7 @@ body::-webkit-scrollbar{width:0;height:0}
   opacity:0;
   transform:translateY(8px);
   transition:opacity .22s ease,transform .22s ease;
+  pointer-events:none;
 }
 
 .guide-bubble.show{opacity:1;transform:translateY(0)}

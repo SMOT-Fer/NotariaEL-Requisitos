@@ -391,8 +391,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (scrollDownBtn) scrollDownBtn.addEventListener('click', () => scrollModalContent(1));
   modalBody.addEventListener('scroll', updateScrollButtons);
   window.addEventListener('resize', updateScrollButtons);
-  if (guideAssistant) {
-    guideAssistant.addEventListener('click', handleGuideAssistantClick);
+  const guideAvatar = document.querySelector('.guide-avatar');
+
+  if (guideAvatar) {
+    guideAvatar.addEventListener('click', handleGuideAssistantClick);
   }
   if (startModuleBtn) {
     startModuleBtn.addEventListener('click', startModule);
