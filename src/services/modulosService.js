@@ -18,61 +18,61 @@ async function list() {
   if (isCacheValid(listCacheEntry)) {
     return listCacheEntry.rows.map((row) => ({ ...row }));
   }
-  const res = await db.query(`
-    SELECT id, nombre, numero, piso, icono
-    FROM modulos
-    ORDER BY
-      numero ASC NULLS LAST,
-      piso ASC NULLS LAST,
-      nombre ASC,
-      id ASC
-  `);
+  const res = await db.query(
+    `SELECT id, nombre, numero, piso, icono
+     FROM modulos
+     ORDER BY ISNULL(numero), numero ASC, ISNULL(piso), piso ASC, nombre ASC, id ASC`
+  );
   listCacheEntry = {
-    rows: res.rows,
+    rows: res,
     expiresAt: Date.now() + CACHE_TTL_MS,
   };
-  return res.rows.map((row) => ({ ...row }));
+  return res.map((row) => ({ ...row }));
 }
 
 async function getById(id) {
-  const res = await db.query('SELECT * FROM modulos WHERE id = $1', [id]);
-  return res.rows[0];
+  const res = await db.query('SELECT * FROM modulos WHERE id = ?', [id]);
+  return res[0];
 }
 
 async function create(data) {
   const { nombre, numero, piso, icono } = data;
-  const res = await db.query(
-    'INSERT INTO modulos (nombre, numero, piso, icono) VALUES ($1,$2,$3,$4) RETURNING *',
+  await db.query(
+    'INSERT INTO modulos (nombre, numero, piso, icono) VALUES (?,?,?,?)',
     [nombre, numero, piso || null, icono || null]
   );
   clearModulosCache();
   clearTramitesCache();
-  return res.rows[0];
+  // Obtener el registro insertado
+  const res = await db.query('SELECT * FROM modulos WHERE id = LAST_INSERT_ID()');
+  return res[0];
 }
 
 async function update(id, data) {
   const { nombre, numero, piso, icono } = data;
-  const res = await db.query(
-    'UPDATE modulos SET nombre=$1, numero=$2, piso=$3, icono=$4 WHERE id=$5 RETURNING *',
+  await db.query(
+    'UPDATE modulos SET nombre=?, numero=?, piso=?, icono=? WHERE id=?',
     [nombre, numero, piso || null, icono || null, id]
   );
   clearModulosCache();
   clearTramitesCache();
-  return res.rows[0];
+  // Obtener el registro actualizado
+  const res = await db.query('SELECT * FROM modulos WHERE id = ?', [id]);
+  return res[0];
 }
 
 async function remove(id) {
   try {
-    const res = await db.query('SELECT icono FROM modulos WHERE id=$1', [id]);
-    const row = res.rows[0];
+    const res = await db.query('SELECT icono FROM modulos WHERE id=?', [id]);
+    const row = res[0];
     if (row && row.icono) {
       const p = path.join(process.cwd(), 'public', 'icons', String(row.icono));
       try { await fs.unlink(p); } catch (e) { /* ignore */ }
     }
   } catch (e) { }
   // remove associations where this modulo is linked
-  try { await db.query('DELETE FROM tramite_modulo WHERE modulo_id=$1', [id]); } catch (e) { }
-  await db.query('DELETE FROM modulos WHERE id=$1', [id]);
+  try { await db.query('DELETE FROM tramite_modulo WHERE modulo_id=?', [id]); } catch (e) { }
+  await db.query('DELETE FROM modulos WHERE id=?', [id]);
   clearModulosCache();
   clearTramitesCache();
   return;

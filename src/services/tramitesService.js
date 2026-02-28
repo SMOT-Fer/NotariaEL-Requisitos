@@ -25,10 +25,10 @@ async function list() {
   }
   const res = await db.query('SELECT id, titulo, icono FROM tramites ORDER BY id');
   listCacheEntry = {
-    rows: res.rows,
+    rows: res,
     expiresAt: Date.now() + CACHE_TTL_MS,
   };
-  return cloneRows(res.rows);
+  return cloneRows(res);
 }
 
 async function getById(id) {
@@ -42,53 +42,23 @@ async function getById(id) {
     };
   }
 
-  const res = await db.query(`
-    SELECT
-      t.id,
-      t.titulo,
-      t.icono,
-      COALESCE((
-        SELECT json_agg(
-          json_build_object(
-            'id', r.id,
-            'tramite_id', r.tramite_id,
-            'texto', r.texto,
-            'sort_order', r.sort_order
-          )
-          ORDER BY r.sort_order, r.id
-        )
-        FROM requisitos r
-        WHERE r.tramite_id = t.id
-      ), '[]'::json) AS requisitos,
-      COALESCE((
-        SELECT json_agg(
-          json_build_object(
-            'id', m.id,
-            'nombre', m.nombre,
-            'numero', m.numero,
-            'piso', m.piso,
-            'icono', m.icono
-          )
-          ORDER BY
-            m.numero ASC NULLS LAST,
-            m.piso ASC NULLS LAST,
-            m.nombre ASC,
-            m.id ASC
-        )
-        FROM tramite_modulo tm
-        JOIN modulos m ON m.id = tm.modulo_id
-        WHERE tm.tramite_id = t.id
-      ), '[]'::json) AS modulos
-    FROM tramites t
-    WHERE t.id = $1
-  `, [id]);
-  const row = res.rows[0];
-  if (!row) return null;
-
+  // MySQL no soporta json_agg/json_build_object, así que se hace manualmente
+  const tramiteRes = await db.query('SELECT id, titulo, icono FROM tramites WHERE id = ?', [id]);
+  const tramite = tramiteRes[0];
+  if (!tramite) return null;
+  const requisitos = await db.query('SELECT id, tramite_id, texto, sort_order FROM requisitos WHERE tramite_id = ? ORDER BY sort_order, id', [id]);
+  const modulos = await db.query(
+    `SELECT m.id, m.nombre, m.numero, m.piso, m.icono
+     FROM tramite_modulo tm
+     JOIN modulos m ON m.id = tm.modulo_id
+     WHERE tm.tramite_id = ?
+     ORDER BY ISNULL(m.numero), m.numero ASC, ISNULL(m.piso), m.piso ASC, m.nombre ASC, m.id ASC`,
+    [id]
+  );
   const result = {
-    ...row,
-    requisitos: Array.isArray(row.requisitos) ? row.requisitos : [],
-    modulos: Array.isArray(row.modulos) ? row.modulos : [],
+    ...tramite,
+    requisitos: requisitos,
+    modulos: modulos,
   };
   byIdCache.set(cacheKey, {
     row: result,
@@ -103,29 +73,25 @@ async function getById(id) {
 
 async function create(data) {
   const { titulo, icono } = data;
-  const res = await db.query(
-    'INSERT INTO tramites (titulo, icono) VALUES ($1,$2) RETURNING *',
-    [titulo, icono || null]
-  );
+  await db.query('INSERT INTO tramites (titulo, icono) VALUES (?, ?)', [titulo, icono || null]);
   clearTramitesCache();
-  return res.rows[0];
+  const res = await db.query('SELECT * FROM tramites WHERE id = LAST_INSERT_ID()');
+  return res[0];
 }
 
 async function update(id, data) {
   const { titulo, icono } = data;
-  const res = await db.query(
-    'UPDATE tramites SET titulo=$1, icono=$2 WHERE id=$3 RETURNING *',
-    [titulo, icono || null, id]
-  );
+  await db.query('UPDATE tramites SET titulo=?, icono=? WHERE id=?', [titulo, icono || null, id]);
   clearTramitesCache();
-  return res.rows[0];
+  const res = await db.query('SELECT * FROM tramites WHERE id = ?', [id]);
+  return res[0];
 }
 
 async function remove(id) {
   // try to delete associated icon file if present
   try {
-    const res = await db.query('SELECT icono FROM tramites WHERE id=$1', [id]);
-    const row = res.rows[0];
+    const res = await db.query('SELECT icono FROM tramites WHERE id=?', [id]);
+    const row = res[0];
     if (row && row.icono) {
       const p = path.join(process.cwd(), 'public', 'icons', String(row.icono));
       try { await fs.unlink(p); } catch (e) { /* ignore missing file */ }
@@ -135,11 +101,11 @@ async function remove(id) {
   }
   // delete requisitos rows
   try {
-    await db.query('DELETE FROM requisitos WHERE tramite_id=$1', [id]);
+    await db.query('DELETE FROM requisitos WHERE tramite_id=?', [id]);
   } catch (e) { /* ignore */ }
   // delete associations
-  try { await db.query('DELETE FROM tramite_modulo WHERE tramite_id=$1', [id]); } catch (e) { }
-  await db.query('DELETE FROM tramites WHERE id=$1', [id]);
+  try { await db.query('DELETE FROM tramite_modulo WHERE tramite_id=?', [id]); } catch (e) { }
+  await db.query('DELETE FROM tramites WHERE id=?', [id]);
   clearTramitesCache();
   return;
 }

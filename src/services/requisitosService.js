@@ -29,14 +29,12 @@ async function list(filter) {
 
   let rows;
   if (filter && filter.tramite_id) {
-    const res = await db.query(
-      'SELECT id, tramite_id, texto, sort_order FROM requisitos WHERE tramite_id=$1 ORDER BY sort_order, id',
+    rows = await db.query(
+      'SELECT id, tramite_id, texto, sort_order FROM requisitos WHERE tramite_id=? ORDER BY sort_order, id',
       [filter.tramite_id]
     );
-    rows = res.rows;
   } else {
-    const res = await db.query('SELECT id, tramite_id, texto, sort_order FROM requisitos ORDER BY tramite_id, sort_order, id');
-    rows = res.rows;
+    rows = await db.query('SELECT id, tramite_id, texto, sort_order FROM requisitos ORDER BY tramite_id, sort_order, id');
   }
 
   listCache.set(cacheKey, {
@@ -47,37 +45,39 @@ async function list(filter) {
 }
 
 async function getById(id) {
-  const res = await db.query('SELECT id, tramite_id, texto, sort_order FROM requisitos WHERE id=$1', [id]);
-  return res.rows[0];
+  const res = await db.query('SELECT id, tramite_id, texto, sort_order FROM requisitos WHERE id=?', [id]);
+  return res[0];
 }
 
 async function create(data) {
   const { tramite_id, texto } = data;
   // Obtener el siguiente sort_order automáticamente
-  const r = await db.query('SELECT MAX(sort_order) as max FROM requisitos WHERE tramite_id=$1', [tramite_id]);
-  const nextSort = (r.rows[0] && r.rows[0].max != null) ? (parseInt(r.rows[0].max, 10) + 1) : 0;
-  const res = await db.query(
-    'INSERT INTO requisitos (tramite_id, texto, sort_order) VALUES ($1,$2,$3) RETURNING id, tramite_id, texto, sort_order',
+  const r = await db.query('SELECT MAX(sort_order) as max FROM requisitos WHERE tramite_id=?', [tramite_id]);
+  const nextSort = (r[0] && r[0].max != null) ? (parseInt(r[0].max, 10) + 1) : 0;
+  await db.query(
+    'INSERT INTO requisitos (tramite_id, texto, sort_order) VALUES (?,?,?)',
     [tramite_id, texto, nextSort]
   );
   clearRequisitosCache();
   clearTramitesCache();
-  return res.rows[0];
+  const res = await db.query('SELECT id, tramite_id, texto, sort_order FROM requisitos WHERE id = LAST_INSERT_ID()');
+  return res[0];
 }
 
 async function update(id, data) {
   const { texto, sort_order } = data;
-  const res = await db.query(
-    'UPDATE requisitos SET texto=$1, sort_order=COALESCE($2, sort_order) WHERE id=$3 RETURNING id, tramite_id, texto, sort_order',
+  await db.query(
+    'UPDATE requisitos SET texto=?, sort_order=IFNULL(?, sort_order) WHERE id=?',
     [texto, sort_order ?? null, id]
   );
   clearRequisitosCache();
   clearTramitesCache();
-  return res.rows[0];
+  const res = await db.query('SELECT id, tramite_id, texto, sort_order FROM requisitos WHERE id=?', [id]);
+  return res[0];
 }
 
 async function remove(id) {
-  await db.query('DELETE FROM requisitos WHERE id=$1', [id]);
+  await db.query('DELETE FROM requisitos WHERE id=?', [id]);
   clearRequisitosCache();
   clearTramitesCache();
   return;

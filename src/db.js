@@ -1,25 +1,25 @@
 require('dotenv').config();
-const { Pool } = require('pg');
+const mysql = require('mysql2/promise');
 
-// Prefer DATABASE_URL, fall back to SUPABASE_URL (value from your .env)
 const connectionString = process.env.DATABASE_URL;
-const poolConfig = {};
-if (connectionString) poolConfig.connectionString = connectionString;
-// Decide about SSL: enable for supabase URLs or when explicitly requested
-poolConfig.ssl = { rejectUnauthorized: false };
 
-const pool = new Pool(poolConfig);
-
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle PostgreSQL client', err);
+const pool = mysql.createPool({
+  uri: connectionString,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-async function query(text, params) {
+pool.on?.('error', (err) => {
+  console.error('Unexpected MySQL pool error', err);
+});
+
+async function query(sql, params) {
   const start = Date.now();
-  const res = await pool.query(text, params);
+  const [rows] = await pool.execute(sql, params);
   const duration = Date.now() - start;
-  // console.debug('executed query', { text, duration, rows: res.rowCount });
-  return res;
+  // console.debug('executed query', { sql, duration });
+  return rows;
 }
 
 module.exports = { query, pool };

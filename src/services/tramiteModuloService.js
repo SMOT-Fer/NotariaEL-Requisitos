@@ -30,11 +30,11 @@ async function list(filter = {}) {
 
   if (filter && filter.tramite_id != null) {
     params.push(filter.tramite_id);
-    whereParts.push(`tramite_id = $${params.length}`);
+    whereParts.push('tramite_id = ?');
   }
   if (filter && filter.modulo_id != null) {
     params.push(filter.modulo_id);
-    whereParts.push(`modulo_id = $${params.length}`);
+    whereParts.push('modulo_id = ?');
   }
 
   const where = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
@@ -47,27 +47,28 @@ async function list(filter = {}) {
   );
 
   listCache.set(cacheKey, {
-    rows: res.rows,
+    rows: res,
     expiresAt: Date.now() + CACHE_TTL_MS,
   });
-  return res.rows.map((row) => ({ ...row }));
+  return res.map((row) => ({ ...row }));
 }
 
 async function getOne(tramite_id, modulo_id) {
-  const res = await db.query('SELECT * FROM tramite_modulo WHERE tramite_id=$1 AND modulo_id=$2', [tramite_id, modulo_id]);
-  return res.rows[0];
+  const res = await db.query('SELECT * FROM tramite_modulo WHERE tramite_id=? AND modulo_id=?', [tramite_id, modulo_id]);
+  return res[0];
 }
 
 async function create(data) {
   const { tramite_id, modulo_id } = data;
-  const res = await db.query('INSERT INTO tramite_modulo (tramite_id, modulo_id) VALUES ($1,$2) RETURNING *', [tramite_id, modulo_id]);
+  await db.query('INSERT INTO tramite_modulo (tramite_id, modulo_id) VALUES (?,?)', [tramite_id, modulo_id]);
   clearTramiteModuloCache();
   clearTramitesCache();
-  return res.rows[0];
+  const res = await db.query('SELECT * FROM tramite_modulo WHERE tramite_id=? AND modulo_id=?', [tramite_id, modulo_id]);
+  return res[0];
 }
 
 async function remove(tramite_id, modulo_id) {
-  await db.query('DELETE FROM tramite_modulo WHERE tramite_id=$1 AND modulo_id=$2', [tramite_id, modulo_id]);
+  await db.query('DELETE FROM tramite_modulo WHERE tramite_id=? AND modulo_id=?', [tramite_id, modulo_id]);
   clearTramiteModuloCache();
   clearTramitesCache();
   return;
