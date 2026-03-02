@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('wheel', (e) => {
     if (e.ctrlKey) e.preventDefault();
   }, { passive: false });
+  document.addEventListener('touchmove', function(e) {
+    if (e.scale !== 1) e.preventDefault();
+  }, { passive: false });
 
   const cardsContainer = document.getElementById('cards');
   const startOverlay = document.getElementById('startOverlay');
